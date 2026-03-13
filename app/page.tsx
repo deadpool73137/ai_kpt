@@ -145,7 +145,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f8f9fc] p-4 md:p-10 pb-28">
+    <main className="min-h-screen p-4 md:p-10 pb-28">
       <div className="max-w-5xl mx-auto space-y-12">
 
         {/* 헤더 */}
@@ -256,54 +256,57 @@ export default function Home() {
         <AnimatePresence>
           {report && (
             <motion.div
-              initial={{ opacity: 0, y: 32, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="bg-white rounded-3xl shadow-md border border-slate-100 overflow-hidden"
+              className="bg-white/80 backdrop-blur-md p-8 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white"
             >
-              {/* 리포트 헤더 */}
-              <div className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 px-8 py-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    ✨ AI 인사이트 리포트
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+                <div>
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                    AI 분석 리포트
                   </h2>
-                  <span className="text-xs bg-white/20 text-white font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
-                    Claude 3.5 Sonnet
-                  </span>
+                  <p className="text-teal-600 font-medium mt-1">분기별 팀 성장을 위한 맞춤형 가이드</p>
+                </div>
+                <div className="bg-teal-50 px-4 py-2 rounded-2xl">
+                  <span className="text-teal-700 text-sm font-bold">Claude 3.5 Sonnet</span>
                 </div>
               </div>
 
               {/* KPT 시각화 차트 */}
               <KptChart kpt={kpt} />
 
-              {/* 리포트 본문 */}
-              <div className="px-8 py-8">
-                <div className="prose prose-blue max-w-none
-                  prose-p:my-6
-                  prose-p:leading-[4]
-                  prose-headings:mt-8
-                  prose-headings:mb-4
-                  prose-headings:font-bold
-                  prose-headings:text-slate-900
-                  prose-li:my-2
-                  prose-li:leading-[3]
-                  prose-p:text-slate-600
-                  prose-ul:my-4 prose-ol:my-4
-                  prose-strong:text-slate-800
-                  prose-hr:my-16
-                  prose-blockquote:border-l-4 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:rounded-r-xl prose-blockquote:py-1
-                  prose-table:text-sm prose-th:bg-slate-50 prose-th:text-slate-700
-                ">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {report}
-                  </ReactMarkdown>
-                </div>
+              {/* 마크다운 렌더링 */}
+              <div className="prose prose-blue max-w-none
+                prose-p:text-lg prose-p:leading-relaxed prose-p:text-slate-600 prose-p:mb-8
+                prose-headings:text-slate-900 prose-headings:font-bold prose-headings:mt-12 prose-headings:mb-6
+                prose-li:text-lg prose-li:text-slate-600 prose-li:mb-3
+                prose-strong:text-teal-700 prose-strong:font-bold
+                prose-hr:my-12 prose-hr:border-slate-100
+                prose-blockquote:border-l-4 prose-blockquote:border-teal-400 prose-blockquote:bg-teal-50/50 prose-blockquote:rounded-r-xl prose-blockquote:py-1
+                prose-table:text-sm prose-th:bg-slate-50 prose-th:text-slate-700
+              ">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {report}
+                </ReactMarkdown>
               </div>
 
-              {/* 리포트 푸터 */}
-              <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-center">
-                <p className="text-sm text-slate-400">분석 결과를 바탕으로 다음 분기 Try를 실천해 보세요 🙌</p>
+              {/* 하단 피드백 섹션 */}
+              <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
+                <p className="text-slate-400 font-medium">이 분석 결과가 도움이 되었나요?</p>
+                <div className="flex gap-3">
+                  {['😍', '👍', '🤔'].map((emoji) => (
+                    <motion.button
+                      key={emoji}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="text-2xl bg-slate-50 w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-white hover:shadow-md transition-all"
+                    >
+                      {emoji}
+                    </motion.button>
+                  ))}
+                </div>
               </div>
             </motion.div>
           )}
