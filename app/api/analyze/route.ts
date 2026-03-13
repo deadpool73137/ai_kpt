@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const { k, p, t } = await req.json();
 
     const response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: "claude-sonnet-4-5",
       max_tokens: 1000,
       system: "너는 IT 팀의 성장을 돕는 전문 코치야. 사용자의 KPT 회고를 바탕으로 따뜻하지만 날카로운 분석 리포트를 작성해줘.",
       messages: [

@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
-import { Noto_Sans_KR } from 'next/font/google';
+import { Noto_Sans_KR, Sora } from 'next/font/google';
 import './globals.css';
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-noto-sans-kr',
+});
+
+const sora = Sora({
+  subsets: ['latin'],
+  weight: ['700', '800'],
+  variable: '--font-sora',
 });
 
 export const metadata: Metadata = {
@@ -19,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={notoSansKR.variable}>
+    <html lang="ko" className={`${notoSansKR.variable} ${sora.variable}`}>
       <body className="font-sans antialiased">
         {children}
       </body>
