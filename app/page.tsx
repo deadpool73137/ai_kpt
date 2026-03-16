@@ -5,13 +5,17 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ScoreCards, type Scores } from '@/components/ScoreCards';
+import { KptChart } from '@/components/KptChart';
 
 // ─── 타입 ───────────────────────────────────────────────
+
 interface SavedReport {
   id: string;
   quarter: string;
   kpt: { k: string; p: string; t: string };
   report: string;
+  scores?: Scores;
   createdAt: string;
 }
 
@@ -19,8 +23,11 @@ interface SavedReport {
 function generateQuarters(): string[] {
   const quarters: string[] = [];
   const now = new Date();
-  for (let y = now.getFullYear(); y >= now.getFullYear() - 2; y--) {
+  const currentYear = now.getFullYear();
+  const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
+  for (let y = currentYear; y >= currentYear - 2; y--) {
     for (let q = 4; q >= 1; q--) {
+      if (y === currentYear && q > currentQuarter) continue;
       quarters.push(`${y}-Q${q}`);
     }
   }
@@ -29,45 +36,10 @@ function generateQuarters(): string[] {
 
 // ─── KPT 카드 설정 ─────────────────────────────────────
 const CARDS = [
-  { id: 'k', label: 'Keep', emoji: '✅', description: '잘 되고 있어서 유지할 것', dot: 'bg-green-500', ring: 'focus:ring-blue-500', labelColor: 'text-green-600' },
-  { id: 'p', label: 'Problem', emoji: '⚠️', description: '개선이 필요한 문제점', dot: 'bg-red-500', ring: 'focus:ring-blue-500', labelColor: 'text-red-500' },
-  { id: 't', label: 'Try', emoji: '🚀', description: '다음 분기에 시도할 것', dot: 'bg-blue-500', ring: 'focus:ring-blue-500', labelColor: 'text-blue-600' },
+  { id: 'k', label: 'Keep', badge: 'K', badgeBg: 'bg-green-100', badgeText: 'text-green-600', description: '잘 되고 있어서 유지할 것', dot: 'bg-green-500', ring: 'focus:ring-blue-500', labelColor: 'text-green-600' },
+  { id: 'p', label: 'Problem', badge: 'P', badgeBg: 'bg-red-100', badgeText: 'text-red-500', description: '개선이 필요한 문제점', dot: 'bg-red-500', ring: 'focus:ring-blue-500', labelColor: 'text-red-500' },
+  { id: 't', label: 'Try', badge: 'T', badgeBg: 'bg-blue-100', badgeText: 'text-blue-600', description: '다음 분기에 시도할 것', dot: 'bg-blue-500', ring: 'focus:ring-blue-500', labelColor: 'text-blue-600' },
 ];
-
-// ─── KPT 분포 차트 ─────────────────────────────────────
-function KptChart({ kpt }: { kpt: { k: string; p: string; t: string } }) {
-  const countLines = (text: string) => text.split('\n').filter((l) => l.trim().length > 0).length || 1;
-  const counts = { k: countLines(kpt.k), p: countLines(kpt.p), t: countLines(kpt.t) };
-  const total = counts.k + counts.p + counts.t;
-  const pct = (n: number) => Math.round((n / total) * 100);
-  const bars = [
-    { label: 'Keep', value: counts.k, pct: pct(counts.k), bar: 'bg-green-500', light: 'bg-green-50', text: 'text-green-600' },
-    { label: 'Problem', value: counts.p, pct: pct(counts.p), bar: 'bg-red-400', light: 'bg-red-50', text: 'text-red-500' },
-    { label: 'Try', value: counts.t, pct: pct(counts.t), bar: 'bg-blue-500', light: 'bg-blue-50', text: 'text-blue-600' },
-  ];
-  return (
-    <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 mb-8">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">KPT 항목 분포</p>
-      <div className="flex rounded-full overflow-hidden h-3 mb-6 gap-0.5">
-        {bars.map((b) => (
-          <motion.div key={b.label} initial={{ width: 0 }} animate={{ width: `${b.pct}%` }} transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }} className={`${b.bar} h-full`} title={`${b.label}: ${b.pct}%`} />
-        ))}
-      </div>
-      <div className="space-y-3">
-        {bars.map((b, i) => (
-          <div key={b.label} className="flex items-center gap-3">
-            <span className={`text-xs font-semibold w-14 ${b.text}`}>{b.label}</span>
-            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${b.pct}%` }} transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 * i + 0.3 }} className={`h-full rounded-full ${b.bar}`} />
-            </div>
-            <span className="text-xs text-gray-400 w-8 text-right">{b.pct}%</span>
-            <span className={`text-xs font-semibold ${b.text} ${b.light} px-2 py-0.5 rounded-full`}>{b.value}항목</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ─── 이력 패널 ─────────────────────────────────────────
 function HistoryPanel({ history, onLoad, onDelete }: {
@@ -149,6 +121,7 @@ export default function Home() {
   const [kpt, setKpt] = useState({ k: '', p: '', t: '' });
   const [quarter, setQuarter] = useState('2026-Q1');
   const [report, setReport] = useState('');
+  const [scores, setScores] = useState<Scores | null>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<SavedReport[]>([]);
   const [saved, setSaved] = useState(false);
@@ -167,7 +140,23 @@ export default function Home() {
 ---
 
 
+## 📈 KPT 점수 요약
+
+
+| 항목 | 점수 | 평가 |
+|------|------|------|
+| ✅ Keep — Strengths Score | 7 / 10 | 명확한 프로세스 장점, 수치 근거 보완 필요 |
+| ⚠️ Problem — Risk Score | 8 / 10 | 반복적 구조 문제로 생산성 저해, 즉각 개선 필요 |
+| 🚀 Try — Actionability Score | 6 / 10 | 방향성은 좋으나 실행 주체·일정 명확화 필요 |
+
+
+---
+
+
 ## ✅ Keep — 잘 되고 있는 것
+
+
+**Strengths Score: 7 / 10**
 
 
 - **코드 리뷰 프로세스**가 안정적으로 정착되어 버그 감소에 기여하고 있습니다.
@@ -183,6 +172,9 @@ export default function Home() {
 ## ⚠️ Problem — 반복되는 문제점
 
 
+**Risk Score: 8 / 10**
+
+
 1. **커뮤니케이션 지연**: Slack 응답 지연으로 의사결정이 느려지는 패턴이 반복됩니다.
 
 2. **기술 부채 누적**: 빠른 배포 우선순위로 인해 리팩토링이 계속 밀리고 있습니다.
@@ -194,6 +186,9 @@ export default function Home() {
 
 
 ## 🚀 Try — 다음 분기 실행 제안
+
+
+**Actionability Score: 6 / 10**
 
 
 | 제안 | 기대 효과 | 우선순위 |
@@ -214,7 +209,7 @@ export default function Home() {
   }, []);
 
   const saveToHistory = () => {
-    const newItem: SavedReport = { id: Date.now().toString(), quarter, kpt, report, createdAt: new Date().toISOString() };
+    const newItem: SavedReport = { id: Date.now().toString(), quarter, kpt, report, scores: scores ?? undefined, createdAt: new Date().toISOString() };
     const updated = [newItem, ...history.filter((h) => h.quarter !== quarter)];
     setHistory(updated);
     localStorage.setItem('kpt_history', JSON.stringify(updated));
@@ -226,6 +221,7 @@ export default function Home() {
     setKpt(item.kpt);
     setQuarter(item.quarter);
     setReport(item.report);
+    setScores(item.scores ?? null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -246,6 +242,7 @@ export default function Home() {
       const res = await fetch('/api/analyze', { method: 'POST', body: JSON.stringify(kpt) });
       const data = await res.json();
       setReport(data.result);
+      if (data.scores) setScores(data.scores);
     } catch {
       alert("분석에 실패했습니다.");
     } finally {
@@ -256,19 +253,21 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* 검은색 상단 네비게이션 */}
-      <header className="bg-black px-10 py-7 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-white font-bold text-3xl tracking-tight font-[family-name:var(--font-sora)]">KPT</span>
-          <span className="text-gray-300 font-semibold text-3xl">Insight</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-white text-base font-medium border-b border-white pb-0.5">회고 작성</Link>
-            <Link href="/history" className="text-gray-400 hover:text-white text-base transition-colors">이력</Link>
-          </nav>
-          <div className="flex items-center gap-2 text-sm text-gray-500 bg-white/10 px-4 py-2 rounded-full">
-            <span className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-gray-300">Claude AI</span>
+      <header className="bg-black px-6 md:px-10 py-5 md:py-7">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-white font-bold text-2xl md:text-3xl tracking-tight font-[family-name:var(--font-sora)]">KPT</span>
+            <span className="text-gray-300 font-semibold text-2xl md:text-3xl">Insight</span>
+          </div>
+          <div className="flex items-center gap-4 md:gap-6">
+            <nav className="flex items-center gap-4 md:gap-8">
+              <Link href="/" className="text-white text-sm md:text-base font-medium border-b border-white pb-0.5">회고 작성</Link>
+              <Link href="/history" className="text-gray-400 hover:text-white text-sm md:text-base transition-colors">이력</Link>
+            </nav>
+            <div className="hidden md:flex items-center gap-2 text-sm bg-white/10 px-4 py-2 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-green-400" />
+              <span className="text-gray-300">Claude AI</span>
+            </div>
           </div>
         </div>
       </header>
@@ -302,9 +301,9 @@ export default function Home() {
         {/* KPT 입력 카드 */}
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {CARDS.map((card) => (
-            <motion.div key={card.id} variants={itemVariants} className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
-              <div className="px-5 pt-5 pb-3 flex items-center gap-3 border-b border-gray-100">
-                <span className="text-xl">{card.emoji}</span>
+            <motion.div key={card.id} variants={itemVariants} className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+              <div className="px-5 pt-5 pb-3 flex items-center gap-3 border-b-2 border-gray-100">
+                <span className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg ${card.badgeBg} ${card.badgeText}`}>{card.badge}</span>
                 <div>
                   <h2 className={`font-bold text-sm ${card.labelColor}`}>{card.label}</h2>
                   <p className="text-xs text-gray-400">{card.description}</p>
@@ -324,7 +323,7 @@ export default function Home() {
 
         {/* 미리보기 */}
         <div className="flex justify-end">
-          <button onClick={() => setReport(report ? '' : PREVIEW_REPORT)} className="text-xs text-gray-400 hover:text-blue-500 transition-colors underline underline-offset-2">
+          <button onClick={() => { if (report) { setReport(''); setScores(null); } else { setReport(PREVIEW_REPORT); setScores({ strengths: 7, risks: 8, actionability: 6 }); } }} className="text-xs text-gray-400 hover:text-blue-500 transition-colors underline underline-offset-2">
             {report ? '미리보기 닫기' : '🔍 리포트 미리보기'}
           </button>
         </div>
@@ -366,17 +365,22 @@ export default function Home() {
                 <span className="text-xs text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full font-semibold self-start md:self-auto">Claude 3.5 Sonnet</span>
               </div>
 
-              {/* KPT 차트 */}
+              {/* 정량적 진단 점수 */}
               <div className="px-8 pt-6">
+                {scores && <ScoreCards scores={scores} />}
+              </div>
+
+              {/* KPT 차트 */}
+              <div className="px-8">
                 <KptChart kpt={kpt} />
               </div>
 
               {/* 마크다운 본문 */}
               <div className="px-8 pb-8">
                 <div className="prose prose-blue max-w-none
-                  prose-p:text-base prose-p:leading-relaxed prose-p:text-gray-600 prose-p:mb-6
-                  prose-headings:text-gray-900 prose-headings:font-bold prose-headings:mt-10 prose-headings:mb-4
-                  prose-li:text-gray-600 prose-li:mb-2
+                  prose-p:leading-[2] prose-p:mb-10 prose-p:text-base prose-p:text-gray-600
+                  prose-li:mb-4 prose-li:text-gray-600
+                  prose-headings:mt-14 prose-headings:mb-6 prose-headings:text-gray-900 prose-headings:font-bold
                   prose-strong:text-gray-900 prose-strong:font-semibold
                   prose-hr:my-8 prose-hr:border-gray-100
                   prose-blockquote:border-l-4 prose-blockquote:border-blue-400 prose-blockquote:bg-blue-50 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
@@ -446,7 +450,6 @@ export default function Home() {
                 <p className="text-white text-sm font-semibold mb-3">서비스</p>
                 <ul className="space-y-2 text-sm">
                   <li><a href="#" className="hover:text-white transition-colors">회고 작성</a></li>
-                  <li><a href="#" className="hover:text-white transition-colors">AI 리포트</a></li>
                   <li><a href="#" className="hover:text-white transition-colors">이력 관리</a></li>
                 </ul>
               </div>

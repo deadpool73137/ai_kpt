@@ -5,12 +5,15 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ScoreCards, type Scores } from '@/components/ScoreCards';
+import { KptChart } from '@/components/KptChart';
 
 interface SavedReport {
   id: string;
   quarter: string;
   kpt: { k: string; p: string; t: string };
   report: string;
+  scores?: Scores;
   createdAt: string;
 }
 
@@ -33,21 +36,23 @@ export default function HistoryPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* 상단 네비게이션 */}
-      <header className="bg-black px-10 py-7 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/">
-            <span className="text-white font-bold text-3xl tracking-tight font-[family-name:var(--font-sora)] cursor-pointer">KPT</span>
-          </Link>
-          <span className="text-gray-300 font-semibold text-3xl">Insight</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-gray-400 hover:text-white text-base transition-colors">회고 작성</Link>
-            <Link href="/history" className="text-white text-base font-medium border-b border-white pb-0.5">이력</Link>
-          </nav>
-          <div className="flex items-center gap-2 text-sm bg-white/10 px-4 py-2 rounded-full">
-            <span className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-gray-300">Claude AI</span>
+      <header className="bg-black px-6 md:px-10 py-5 md:py-7">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/">
+              <span className="text-white font-bold text-2xl md:text-3xl tracking-tight font-[family-name:var(--font-sora)] cursor-pointer">KPT</span>
+            </Link>
+            <span className="text-gray-300 font-semibold text-2xl md:text-3xl">Insight</span>
+          </div>
+          <div className="flex items-center gap-4 md:gap-6">
+            <nav className="flex items-center gap-4 md:gap-8">
+              <Link href="/" className="text-gray-400 hover:text-white text-sm md:text-base transition-colors">회고 작성</Link>
+              <Link href="/history" className="text-white text-sm md:text-base font-medium border-b border-white pb-0.5">이력</Link>
+            </nav>
+            <div className="hidden md:flex items-center gap-2 text-sm bg-white/10 px-4 py-2 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-green-400" />
+              <span className="text-gray-300">Claude AI</span>
+            </div>
           </div>
         </div>
       </header>
@@ -151,8 +156,20 @@ export default function HistoryPage() {
                         </Link>
                       </div>
 
+                      {/* 정량적 진단 점수 */}
+                      {selected.scores && (
+                        <div className="px-8 pt-6">
+                          <ScoreCards scores={selected.scores} />
+                        </div>
+                      )}
+
+                      {/* KPT 분포 차트 */}
+                      <div className="px-8">
+                        <KptChart kpt={selected.kpt} />
+                      </div>
+
                       {/* KPT 원본 입력 */}
-                      <div className="px-8 py-6 border-b border-gray-100">
+                      <div className="px-8 pb-6 border-b border-gray-100">
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">원본 KPT 입력</p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {[
@@ -169,11 +186,11 @@ export default function HistoryPage() {
                       </div>
 
                       {/* 리포트 본문 */}
-                      <div className="px-8 py-8">
+                      <div className="px-8 pb-8">
                         <div className="prose prose-blue max-w-none
-                          prose-p:text-base prose-p:leading-relaxed prose-p:text-gray-600 prose-p:mb-6
-                          prose-headings:text-gray-900 prose-headings:font-bold prose-headings:mt-10 prose-headings:mb-4
-                          prose-li:text-gray-600 prose-li:mb-2
+                          prose-p:leading-[2] prose-p:mb-10 prose-p:text-base prose-p:text-gray-600
+                          prose-li:mb-4 prose-li:text-gray-600
+                          prose-headings:mt-14 prose-headings:mb-6 prose-headings:text-gray-900 prose-headings:font-bold
                           prose-strong:text-gray-900 prose-strong:font-semibold
                           prose-hr:my-8 prose-hr:border-gray-100
                           prose-blockquote:border-l-4 prose-blockquote:border-blue-400 prose-blockquote:bg-blue-50 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
